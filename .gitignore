@@ -17,3 +17,19 @@ __pycache__/
 dist/
 relay/.dev.vars
 relay/wrangler.local.jsonc
+# AI assistant and editor settings stay local
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+AGENTS.md
+.codex/
+.cursor/
+.cursorrules
+.windsurfrules
+.aider*
+GEMINI.md
+.gemini/
+.mcp.json
+.vscode/
+.idea/
+.DS_Store

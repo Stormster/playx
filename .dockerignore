@@ -5,3 +5,14 @@ logs
 core
 *.gba
 .env
+.git
+.github
+CLAUDE.md
+CLAUDE.local.md
+.claude
+AGENTS.md
+.codex
+.cursor
+.mcp.json
+.env.*
+!.env.example

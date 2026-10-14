@@ -2,7 +2,7 @@
 import sys, os
 from PIL import Image
 from emu import Emulator
-SHOTS = "/tmp/claude-0/prep"
+SHOTS = "../data/prep/shots"
 os.makedirs(SHOTS, exist_ok=True)
 e = Emulator("../core/mgba_libretro.so", "../roms/firered.gba", "../data/prep")
 if os.path.exists("../data/prep/cur.st"):

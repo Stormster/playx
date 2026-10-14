@@ -2,12 +2,14 @@
 
 **One Game Boy Advance game, played by everyone watching, live inside an X post.**
 
+**[▶ Play the live game](https://playx.stormster.dev)**: Pokémon FireRed, with everyone else who's on.
+
 Post a link on X and the post becomes a handheld. Everyone who taps play controls the same game:
 they vote on the next button, and the crowd's choice goes in. Think Twitch Plays Pokémon, but in
 the timeline, with no stream software and no chat bot. It was built for Pokémon FireRed and runs
 any GBA game you own.
 
-<p align="center"><img src="web/social/firered-play-v1.png" alt="The PlayX card: a red handheld showing Pokémon FireRed, with 'Tap to play'" width="320"></p>
+<p align="center"><a href="https://playx.stormster.dev"><img src="web/social/firered-play-v1.png" alt="Play the live game: a red handheld showing Pokémon FireRed, with 'Tap to play'" width="320"></a></p>
 
 - **Democracy and Anarchy.** In Democracy the most-voted button wins each round. In Anarchy every
   press goes in, with limits per player. The crowd votes to switch modes.

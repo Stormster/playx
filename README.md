@@ -40,18 +40,35 @@ through it with a free Cloudflare Tunnel (no ports to open), then the optional e
 
 ## How it works
 
-```
-viewers ──votes (tiny text)───────────▶ public address (e.g. Cloudflare Tunnel) ──▶ your machine
-viewers ◀──video (from your machine)─── same address ◀──────────────────────────── PlayX container
-                                                                        (emulator, votes, saves)
-optional, for big crowds:
-viewers ◀──live video (~0.3 s)── relay (Cloudflare Worker) ◀── one stream from your machine
-viewers ◀──video chunks (~2 s)── Cloudflare R2 + cache    ◀── uploads from your machine
+```mermaid
+flowchart TB
+    P["<b>Your machine</b><br/>PlayX container: emulator, vote room, saves<br/>your ROM stays here"]
+    T["<b>Public HTTPS address</b><br/>e.g. Cloudflare Tunnel"]
+    subgraph O["Optional, for big crowds"]
+        R["<b>Live relay</b><br/>Cloudflare Worker"]
+        C["<b>Video chunks</b><br/>Cloudflare R2 + cache"]
+    end
+    V(["<b>Viewers</b><br/>in an X post or any browser"])
+
+    P <-- "video ⇅ votes" --> T
+    T <--> V
+    P -. "one live stream" .-> R
+    P -. "chunks, uploaded once" .-> C
+    R -. "~0.3 s behind the game" .-> V
+    C -. "~2 s behind, any crowd size" .-> V
 ```
 
-One container runs the emulator ([mGBA](https://mgba.io)'s libretro core), counts votes, saves, and
-serves the page. Video goes out as short chunks plus, if you set up the relay, a live stream about
-0.3 s behind the game. Viewers switch between the two on their own when one has trouble.
+**One button press, start to finish:**
+
+1. A viewer taps **A**. A few bytes go to your machine through the public address.
+2. In Democracy, votes are counted for 1.5 s and the most popular button wins. In Anarchy, every
+   press goes in, with a per-player limit.
+3. The emulator ([mGBA](https://mgba.io)) presses the button, and the next frames go out to every
+   viewer at about 30 fps.
+
+On its own, your machine sends video to each viewer itself, which is fine for a small crowd. With the
+optional Cloudflare pieces it sends one copy and Cloudflare fans it out. Viewers use the live relay
+when it's up and switch to chunks by themselves when it isn't.
 
 The game keeps running while anyone is watching and freezes 30 s after the last viewer leaves, so an
 empty room costs nothing. Restarts and updates save first and resume from that save, so viewers lose
@@ -72,15 +89,17 @@ Settings survive restarts. Before going public, put the admin page behind a logi
 
 ## Other games
 
-Any GBA ROM runs. Two features read Pokémon FireRed (US v1.0) memory and should be off for anything
-else:
+Any GBA game you own will run. Two extras were written for Pokémon FireRed (US version) only:
 
-- **Release guard** (on by default): rewinds 20 s if the Pokémon count drops. Turn it off in the
-  admin page for other games, or it can rewind on random memory changes.
-- **Name filter** (`server/names.py`): replaces rude trainer and Pokémon names. Off unless you
-  enable it in code.
+- **Release guard** (on by default): if the crowd releases one of your Pokémon, PlayX rewinds 20
+  seconds to undo it. It notices by counting your Pokémon in the spot where FireRed stores them in
+  the console's memory. Other games keep unrelated data in that spot, so the guard could see a
+  "drop" that never happened and rewind for no reason. **Turn it off on the admin page when you run
+  any other game.**
+- **Name filter** (`server/names.py`): replaces rude trainer and Pokémon names. It's switched off and
+  needs a code change to turn on, so you can ignore it.
 
-The page copy and the X card image (`web/index.html`, `web/social/`) mention Pokémon. Change them
+The page text and the X card image (`web/index.html`, `web/social/`) mention Pokémon. Change them
 for your game.
 
 ## Docs

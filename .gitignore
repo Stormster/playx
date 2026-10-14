@@ -1,0 +1,19 @@
+# Never commit games, saves or secrets
+*.gba
+*.gb
+*.gbc
+*.sav
+*.srm
+*.st
+roms/
+data/
+.env
+# Build output
+node_modules/
+.wrangler/
+vendor/
+core/
+__pycache__/
+dist/
+relay/.dev.vars
+relay/wrangler.local.jsonc

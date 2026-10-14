@@ -1,0 +1,26 @@
+{
+  // PlayX live relay (Worker + Durable Object). Setup: docs/deploy.md#live-relay
+  //   npm install && npx wrangler secret put PUB_SECRET && npx wrangler deploy
+  // PUB_SECRET is the same value as XP_RELAY_SECRET in the game server's .env.
+  //
+  // To keep your own domain and origins out of git, copy this file to wrangler.local.jsonc
+  // (ignored) and deploy with: npx wrangler deploy -c wrangler.local.jsonc
+  "name": "playx-relay",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  // Served at https://playx-relay.<your-subdomain>.workers.dev. For your own domain, add:
+  //   "routes": [{ "pattern": "live.example.com", "custom_domain": true }],
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "HUB", "class_name": "Hub" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Hub"] }
+  ],
+  "vars": {
+    // Page origins allowed to watch, comma-separated, e.g. "https://play.example.com".
+    // Empty = any site may embed your stream.
+    "ALLOWED_ORIGINS": ""
+  },
+  "observability": { "enabled": true }
+}

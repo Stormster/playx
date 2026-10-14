@@ -1,0 +1,43 @@
+name: Reliability tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        run: |
+          python -m pip install numpy==2.1.3 aiohttp==3.10.11 pillow==11.0.0
+          npm install --prefix "$RUNNER_TEMP/playx-browser" playwright@1.64.0
+          "$RUNNER_TEMP/playx-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Python regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Browser regression tests
+        run: |
+          python -m http.server 8789 --bind 127.0.0.1 --directory web > "$RUNNER_TEMP/playx-web.log" 2>&1 &
+          web_pid=$!
+          trap 'kill "$web_pid"' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:8789/ > /dev/null; then break; fi
+            sleep 0.1
+          done
+          export NODE_PATH="$RUNNER_TEMP/playx-browser/node_modules"
+          node tests/video-browser.cjs
+          PLAYX_WEB_URL=http://127.0.0.1:8789/embed.html node tests/mode-browser.cjs
+          node tests/keyboard-browser.cjs
+          node tests/play-layout-browser.cjs

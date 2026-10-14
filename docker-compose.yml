@@ -1,0 +1,44 @@
+# PlayX. Run ./setup.sh once (or see README), then:
+#   docker compose up -d                          game on http://localhost:8787
+#   docker compose --profile tunnel up -d         + Cloudflare Tunnel (public address)
+#   docker compose --profile autoupdate up -d     + Watchtower (pulls new images by itself)
+# Profiles combine: --profile tunnel --profile autoupdate.
+services:
+  playx:
+    image: ghcr.io/stormster/playx:latest
+    # build: .                  # build from this checkout instead (then skip --profile autoupdate,
+    #                           # or Watchtower swaps your build for the published image)
+    container_name: playx
+    restart: unless-stopped
+    stop_grace_period: 20s      # time to save on stop
+    user: "${PUID:-99}:${PGID:-100}"
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    env_file: .env              # every setting: docs/configuration.md
+    volumes:
+      - ./roms/game.gba:/rom/game.gba:ro
+      - ./data:/data
+    ports:
+      - "127.0.0.1:8787:8787"   # this machine only; the tunnel reaches it inside Docker.
+                                # For your LAN use "8787:8787"; never expose it to the internet.
+
+  tunnel:
+    profiles: [tunnel]
+    image: cloudflare/cloudflared:latest
+    container_name: playx-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:-}
+    depends_on: [playx]
+
+  watchtower:
+    profiles: [autoupdate]
+    image: containrrr/watchtower:latest
+    container_name: playx-watchtower
+    restart: unless-stopped
+    command: --label-enable --cleanup --interval 300
+    environment:
+      - DOCKER_API_VERSION=1.44     # newer Docker engines refuse Watchtower's old default
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>PlayX Admin</title>
+  <style>
+    :root {
+      --bg: #0e1014; --panel: #171a21; --line: #2b303b; --ink: #eef1f5; --muted: #8d95a5;
+      --accent: #c6f432; --hot: #ff5c7a; --ok: #5ee08a;
+      --ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 var(--ui); }
+    main { max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 12px; }
+    .sub { color: var(--muted); margin: 0 0 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--muted); font-size: 12px; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .row:first-of-type { border-top: 0; }
+    .row label { color: var(--ink); }
+    .row small { color: var(--muted); display: block; font-size: 12px; }
+    .simulation-row { display: block; }
+    .simulation-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .simulation-controls input { width: 68px; padding: 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); font: inherit; }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; }
+    .seg button { background: none; border: 0; color: var(--muted); font: 600 13px var(--ui); padding: 5px 11px; border-radius: 999px; cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: var(--accent); color: #12160a; }
+    input[type=range] { width: 150px; accent-color: var(--accent); }
+    .val { font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; color: var(--muted); }
+    .swatches { display: flex; gap: 8px; }
+    .swatch { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; box-shadow: 0 0 0 1px #ffffff33; }
+    .swatch[aria-pressed="true"] { border-color: var(--bg); box-shadow: 0 0 0 2px #fff; }
+    .swatch[data-theme=flame] { background: #c4211f; } .swatch[data-theme=cobalt] { background: #2c4ea8; }
+    .swatch[data-theme=graphite] { background: #2c2e33; } .swatch[data-theme=pearl] { background: #e6e3dc; }
+    .swatch[data-theme=lime] { background: linear-gradient(135deg, #1e2128 50%, #c6f432 50%); }
+    .btn { background: #232834; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; font: 600 13px var(--ui); padding: 7px 12px; cursor: pointer; }
+    .btn.warn { border-color: var(--hot); color: var(--hot); }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .switch { width: 42px; height: 24px; border-radius: 999px; background: #39404d; border: 0; position: relative; cursor: pointer; }
+    .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
+    .switch[aria-checked="true"] { background: var(--accent); }
+    .switch[aria-checked="true"]::after { left: 21px; }
+    .live img { width: 100%; aspect-ratio: 3 / 2; image-rendering: pixelated; border-radius: 6px; background: #000; display: block; }
+    .saves { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 520px; overflow: auto; }
+    .save { background: #11141a; border: 1px solid var(--line); border-radius: 8px; padding: 6px; cursor: pointer; text-align: left; color: var(--ink); font: 12px var(--ui); }
+    .save:hover { border-color: var(--accent); }
+    .save img { width: 100%; aspect-ratio: 3 / 2; image-rendering: pixelated; display: block; border-radius: 4px; background: #000; margin-bottom: 4px; }
+    .save .tag { color: var(--accent); font-weight: 700; }
+    .login { max-width: 420px; margin: 12vh auto; }
+    .login input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: #11141a; color: var(--ink); font: 14px var(--ui); margin: 10px 0; }
+    .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #232834; border: 1px solid var(--accent); padding: 8px 14px; border-radius: 8px; }
+    .toast[hidden] { display: none; }
+    .err { color: var(--hot); }
+  </style>
+</head>
+<body>
+  <section class="card login" id="login" hidden>
+    <h1>PlayX Admin</h1>
+    <p class="sub">Paste your <code>XP_ADMIN_TOKEN</code>. It's remembered on this browser only.</p>
+    <input id="token" type="password" autocomplete="off" placeholder="Admin token">
+    <button class="btn" id="saveToken">Unlock</button>
+    <p class="err" id="loginErr"></p>
+  </section>
+
+  <main id="app" hidden>
+    <h1>PlayX Admin</h1>
+    <p class="sub" id="sub">Loading...</p>
+
+    <div class="grid">
+      <section class="card live">
+        <h2>Live</h2>
+        <img id="frame" alt="Current game screen">
+        <div class="stats" style="margin-top:12px">
+          <div class="stat"><b id="sViewers">-</b><span>watching</span></div>
+          <div class="stat"><b id="sBots">-</b><span>simulated players</span></div>
+          <div class="stat"><b id="sPlayed">-</b><span>run time</span></div>
+          <div class="stat"><b id="sInputs">-</b><span>inputs (this boot)</span></div>
+          <div class="stat"><b id="sMode">-</b><span>mode</span></div>
+          <div class="stat"><b id="sUndos">-</b><span>releases undone</span></div>
+          <div class="stat"><b id="sState">-</b><span>state</span></div>
+          <div class="stat"><b id="sVideo">-</b><span>video path</span></div>
+          <div class="stat"><b id="sSave">-</b><span>disk saves</span></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Show</h2>
+        <div class="row"><label>Theme for everyone</label><div class="swatches" id="themes"></div></div>
+        <div class="row"><label>Game speed<small>Sound is muted while sped up</small></label>
+          <span class="seg" id="speed"></span></div>
+        <div class="row"><label>Pause the game<small>Everyone sees it frozen</small></label>
+          <button class="switch" role="switch" id="paused" aria-checked="false"></button></div>
+        <div class="row"><label>Force mode<small>Also starts the mode lock</small></label>
+          <span><button class="btn" data-mode="democracy">Democracy</button> <button class="btn" data-mode="anarchy">Anarchy</button></span></div>
+        <div class="row simulation-row">
+          <label for="simulatedMin">Simulated players<small id="simulatedHelp">Bots join and leave gradually within this range while real viewers are watching. Set both to the same number for a fixed count; 0 turns it off.</small></label>
+          <form class="simulation-controls" id="simulatedForm">
+            <input type="number" id="simulatedMin" min="0" max="50" step="1" required value="0" aria-label="Simulated players minimum" aria-describedby="simulatedHelp simulatedRate">
+            <span aria-hidden="true">to</span>
+            <input type="number" id="simulatedMax" min="0" max="50" step="1" required value="0" aria-label="Simulated players maximum" aria-describedby="simulatedHelp simulatedRate">
+            <button class="btn" type="button" id="simulatedAdd">+5</button>
+            <button class="btn" type="submit" id="simulatedApply">Apply</button>
+            <button class="btn" type="button" id="simulatedOff">Off</button>
+          </form>
+          <small id="simulatedRate"></small>
+          <small id="simulatedTotal"></small>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Rules</h2>
+        <div class="row"><label>Vote window</label><span><input type="range" id="window" min="500" max="6000" step="250"> <span class="val" id="windowVal"></span></span></div>
+        <div class="row"><label>Mode lock after a switch<small>Changing this clears the current lock</small></label><span><input type="range" id="modeLock" min="0" max="3600" step="60"> <span class="val" id="modeLockVal"></span></span></div>
+        <div class="row"><label>Run clock idle timer<small>Stops counting play time; the game keeps animating</small></label><span><input type="range" id="idle" min="10" max="600" step="10"> <span class="val" id="idleVal"></span></span></div>
+        <div class="row"><label>Freeze after room is empty<small>Stops frames and uploads after the last viewer leaves</small></label><span><input type="range" id="emptyRoom" min="5" max="600" step="5"> <span class="val" id="emptyRoomVal"></span></span></div>
+        <div class="row"><label>Release guard<small>Undo released Pokemon automatically</small></label>
+          <button class="switch" role="switch" id="guard" aria-checked="true"></button></div>
+        <div class="row"><label>Step multiplier<small>Let viewers vote ×2, ×3, ×5 on directions</small></label>
+          <button class="switch" role="switch" id="steps" aria-checked="false"></button></div>
+        <div class="row"><label for="anarchyHoldUnlimited">Unlimited Anarchy hold<small>Applies to everyone in this run</small></label>
+          <button class="switch" role="switch" id="anarchyHoldUnlimited" aria-label="Unlimited Anarchy hold" aria-checked="false"></button></div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:14px">
+      <h2>Rollback</h2>
+      <p class="sub" style="margin:0 0 10px">Click a save to put the game back there. Minute saves cover the last 3 hours; hourly saves are kept forever.</p>
+      <div class="saves" id="saves"></div>
+    </section>
+  </main>
+  <div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const THEMES = [["flame", "Flame Red"], ["cobalt", "Cobalt"], ["graphite", "Graphite"], ["pearl", "Pearl"], ["lime", "PlayX"]];
+  let token = "";
+  try { token = localStorage.getItem("xp-admin-token") || ""; } catch {}
+  let settings = {};
+  let simulationDirty = false, simulationSaving = false;
+  const SIM_INPUTS = ["simulatedMin", "simulatedMax"], SIM_CONTROLS = [...SIM_INPUTS, "simulatedAdd", "simulatedApply", "simulatedOff"];
+
+  async function api(path, body) {
+    const r = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: { "x-admin-token": token, ...(body ? { "content-type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (r.status === 403) { showLogin("That token didn't work."); throw new Error("forbidden"); }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.headers.get("content-type")?.includes("json") ? r.json() : r;
+  }
+
+  function showLogin(msg) {
+    $("app").hidden = true; $("login").hidden = false; $("loginErr").textContent = msg || "";
+  }
+  $("saveToken").onclick = () => {
+    token = $("token").value.trim();
+    try { localStorage.setItem("xp-admin-token", token); } catch {}
+    start();
+  };
+  $("token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("saveToken").click(); });
+
+  let toastTimer;
+  function toast(t) { $("toast").textContent = t; $("toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => ($("toast").hidden = true), 2500); }
+
+  async function set(patch, msg) {
+    settings = await api("/admin/api/config", patch);
+    paintSettings();
+    if (msg) toast(msg);
+  }
+
+  const fmtTime = (s) => { s = Math.floor(s); const d = Math.floor(s / 86400), h = Math.floor(s / 3600) % 24, m = Math.floor(s / 60) % 60;
+    return (d ? `${d}d ` : "") + `${h}h ${String(m).padStart(2, "0")}m`; };
+  const fmtSecs = (s) => s >= 60 ? `${Math.round(s / 60)} min` : `${s}s`;
+
+  function build() {
+    $("themes").innerHTML = THEMES.map(([id, name]) => `<button class="swatch" data-theme="${id}" title="${name}" aria-label="${name}"></button>`).join("");
+    $("themes").querySelectorAll(".swatch").forEach((b) => (b.onclick = () => set({ theme: b.dataset.theme }, `Theme: ${b.title}`)));
+    $("speed").innerHTML = [1, 2, 3, 4].map((n) => `<button data-speed="${n}">${n}x</button>`).join("");
+    $("speed").querySelectorAll("button").forEach((b) => (b.onclick = () => set({ speed: Number(b.dataset.speed) }, `Speed ${b.dataset.speed}x`)));
+    $("paused").onclick = () => set({ paused: !settings.paused }, settings.paused ? "Resumed" : "Paused");
+    $("steps").onclick = () => set({ steps: !settings.steps }, settings.steps ? "Step multiplier off" : "Step multiplier on");
+    $("anarchyHoldUnlimited").onclick = () => set({ anarchyHoldUnlimited: !settings.anarchyHoldUnlimited }, settings.anarchyHoldUnlimited ? "Unlimited Anarchy hold off" : "Unlimited Anarchy hold on");
+    $("guard").onclick = () => set({ guard: !settings.guard }, settings.guard ? "Release guard off" : "Release guard on");
+    SIM_INPUTS.forEach(id => $(id).oninput = () => { $("simulatedMax").setCustomValidity(""); simulationDirty = true; paintSimulationRate(); });
+    $("simulatedAdd").onclick = () => {
+      // A fixed count stays fixed; a range grows its ceiling.
+      const [lo, hi] = SIM_INPUTS.map(id => { const n = Number($(id).value); return Number.isFinite(n) ? Math.max(0, n) : 0; });
+      $("simulatedMax").value = Math.min(50, hi + 5);
+      if (lo === hi) $("simulatedMin").value = $("simulatedMax").value;
+      simulationDirty = true; paintSimulationRate();
+    };
+    $("simulatedForm").onsubmit = (event) => { event.preventDefault(); saveSimulation(); };
+    $("simulatedOff").onclick = () => {
+      SIM_INPUTS.forEach(id => $(id).value = 0); simulationDirty = true; saveSimulation();
+    };
+    document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => set({ mode: b.dataset.mode }, `Mode: ${b.dataset.mode}`)));
+    for (const [id, fmt, key] of [["window", (v) => `${(v / 1000).toFixed(2)}s`, "window"], ["modeLock", fmtSecs, "modeLock"], ["idle", fmtSecs, "idle"], ["emptyRoom", fmtSecs, "emptyRoom"]]) {
+      $(id).oninput = () => ($(id + "Val").textContent = fmt(Number($(id).value)));
+      $(id).onchange = () => set({ [key]: Number($(id).value) }, "Saved");
+    }
+  }
+
+  function paintSimulationRate() {
+    const rates = SIM_INPUTS.map(id => { const n = Number($(id).value); return Number.isInteger(n) && n > 0 ? Math.min(2, n / 4) : 0; });
+    const fmt = (r) => r.toFixed(2).replace(/\.?0+$/, "");
+    const text = rates[1] ? `About ${rates[0] === rates[1] ? fmt(rates[1]) : `${fmt(Math.min(...rates))}-${fmt(Math.max(...rates))}`} inputs/sec total (max 2/sec).` : "Automatic inputs off.";
+    $("simulatedRate").textContent = (simulationDirty ? "Preview: " : "") + text;
+  }
+
+  async function saveSimulation() {
+    if (simulationSaving) return;
+    const [lo, hi] = SIM_INPUTS.map(id => $(id).valueAsNumber);
+    $("simulatedMax").setCustomValidity(lo > hi ? "Maximum must be at least the minimum." : "");
+    if (!SIM_INPUTS.every(id => $(id).reportValidity())) return;
+    if (![lo, hi].every(n => Number.isInteger(n) && n >= 0 && n <= 50)) return;
+    simulationSaving = true;
+    SIM_CONTROLS.forEach(id => $(id).disabled = true);
+    try {
+      await set({ simulatedMin: lo, simulatedMax: hi }, !hi ? "Simulated players off" : lo === hi ? `${hi} simulated players` : `${lo}-${hi} simulated players`);
+      simulationDirty = false;
+    } catch { toast("Could not save simulated players. Try again."); }
+    finally {
+      simulationSaving = false;
+      SIM_CONTROLS.forEach(id => $(id).disabled = false);
+      paintSettings();
+    }
+  }
+
+  function paintSettings() {
+    if (!simulationDirty && !simulationSaving && !SIM_INPUTS.includes(document.activeElement?.id)) {
+      $("simulatedMin").value = settings.simulatedMin || 0;
+      $("simulatedMax").value = settings.simulatedMax || 0;
+    }
+    paintSimulationRate();
+    $("themes").querySelectorAll(".swatch").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === settings.theme)));
+    $("speed").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.speed) === settings.speed)));
+    $("paused").setAttribute("aria-checked", String(!!settings.paused));
+    $("guard").setAttribute("aria-checked", String(!!settings.guard));
+    $("steps").setAttribute("aria-checked", String(!!settings.steps));
+    $("anarchyHoldUnlimited").setAttribute("aria-checked", String(!!settings.anarchyHoldUnlimited));
+    $("window").value = settings.window; $("windowVal").textContent = `${(settings.window / 1000).toFixed(2)}s`;
+    $("modeLock").value = settings.modeLock; $("modeLockVal").textContent = fmtSecs(settings.modeLock);
+    $("idle").value = settings.idle; $("idleVal").textContent = fmtSecs(settings.idle);
+    $("emptyRoom").value = settings.emptyRoom; $("emptyRoomVal").textContent = fmtSecs(settings.emptyRoom);
+  }
+
+  async function refresh() {
+    const s = await api("/admin/api/status");
+    settings = s.settings; paintSettings();
+    $("sViewers").textContent = s.viewers;
+    $("sBots").textContent = settings.simulatedPlayers || 0;
+    $("simulatedTotal").textContent = `Public total: ${s.viewers + (settings.simulatedPlayers || 0)} (${s.viewers} viewers + ${settings.simulatedPlayers || 0} bots).`;
+    $("sPlayed").textContent = fmtTime(s.played);
+    $("sInputs").textContent = s.inputs;
+    $("sMode").textContent = s.mode + (s.modeLockLeft ? ` (${Math.ceil(s.modeLockLeft / 60)}m lock)` : "");
+    $("sUndos").textContent = s.guardUndos;
+    $("sVideo").textContent = !s.relay ? "R2 chunks" : !s.relay.up ? "relay down, R2 chunks"
+      : s.chunksOn ? `relay + R2 for ${s.fallbackViewers} viewer(s)` : "relay";
+    $("sState").textContent = !s.gameAlive ? "game stopped" : s.settings.paused ? "paused by host" : s.quiet ? "empty room (frozen)" : !s.viewers ? "empty room grace period" : s.idle ? "watching (clock idle)" : "playing";
+    const save = s.persistence;
+    $("sSave").textContent = save.degraded ? `failing (${save.error}), retry in ${Math.ceil(save.retryIn)}s`
+      : save.lastSaved ? `saved ${new Date(save.lastSaved * 1000).toLocaleTimeString()}` : "awaiting first save";
+    $("sSave").classList.toggle("err", save.degraded);
+    $("sub").textContent = `Run started ${new Date(s.started).toLocaleString()}`;
+    $("frame").src = `/latest.png?t=${Date.now()}`;
+  }
+
+  async function loadSaves() {
+    const saves = await api("/admin/api/saves");
+    const blobs = await Promise.all(saves.slice(0, 60).map(async (sv) => {
+      if (!sv.thumb) return null;
+      try { const r = await api(`/admin/api/thumb/${sv.id}`); return URL.createObjectURL(await r.blob()); } catch { return null; }
+    }));
+    $("saves").innerHTML = "";
+    saves.slice(0, 60).forEach((sv, i) => {
+      const b = document.createElement("button");
+      b.className = "save";
+      const when = new Date(sv.time * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      b.innerHTML = `${blobs[i] ? `<img src="${blobs[i]}" alt="">` : `<img alt="">`}<span class="tag">${sv.kind === "hourly" ? "HOURLY" : "MINUTE"}</span> ${when}`;
+      b.onclick = async () => {
+        if (!confirm(`Roll the game back to ${when}? Everyone will see it jump.`)) return;
+        await api("/admin/api/rollback", { id: sv.id });
+        toast("Rolled back"); setTimeout(refresh, 800);
+      };
+      $("saves").appendChild(b);
+    });
+    if (!saves.length) $("saves").textContent = "No saves yet. The first one is written a minute after play starts.";
+  }
+
+  async function start() {
+    if (!token) return showLogin();
+    try { await refresh(); } catch { return; }
+    $("login").hidden = true; $("app").hidden = false;
+    loadSaves();
+    setInterval(() => refresh().catch(() => {}), 3000);
+    setInterval(() => loadSaves().catch(() => {}), 60000);
+  }
+
+  build();
+  start();
+})();
+</script>
+</body>
+</html>

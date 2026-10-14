@@ -1,0 +1,7 @@
+vendor
+roms
+data
+logs
+core
+*.gba
+.env
